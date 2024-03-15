@@ -102,11 +102,15 @@ def get_courts(url: str, postcode: str, type_required: str) -> list[dict]:
 
     url = url.format(postcode)
     response = requests.get(url, timeout=10)
+
     if response.status_code == 404:
         raise Exception("Unable to locate postcode.",
                         response.status_code)
-    if response.status_code != 200:
+    if response.status_code == 500:
         raise Exception("Unable to connect to server.", response.status_code)
+    if response.status_code != 200:
+        raise Exception(
+            "Somethng went wrong when connecting to the server", response.status_code)
 
     courts = response.json()
 
@@ -148,6 +152,7 @@ def people_with_closest_court(people: list[dict]) -> dict:
 
         courts = get_courts(url, person.get(postcode), person.get(court_type))
         court = find_closest_court(courts)
+        print(court)
 
         person_and_court['court_name'] = court.get('name')
         person_and_court['dx_number'] = court.get('dx_number')
@@ -160,6 +165,7 @@ def people_with_closest_court(people: list[dict]) -> dict:
 
 def main():
     """A function to contain the main"""
+
     people = get_people('people.csv')
     people_with_courts = people_with_closest_court(people)
     print(people_with_courts)
