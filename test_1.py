@@ -13,13 +13,18 @@ def is_log_line(line: str) -> bool:
     """Takes a log line and returns True if it is a valid log line and returns nothing
     if it is not.
     """
-    if len(line) < 27:
+    message_start_index = 27
+    timestamp_regex = "../../.. ..:..:.."
+    start_of_message = ' :.'
+    log_levels = ['INFO', 'TRACE', 'WARNING']
+
+    if len(line) < message_start_index:
         return None
 
-    if ":" not in line or not re.search("../../.. ..:..:..", line):
+    if start_of_message not in line or not re.search(timestamp_regex, line):
         return None
 
-    if not any(substring in line for substring in ['INFO', 'TRACE', 'WARNING']):
+    if not any(substring in line for substring in log_levels):
         return None
 
     return True
@@ -30,11 +35,25 @@ def is_log_line(line: str) -> bool:
 # dictionary with keys for "timestamp", "log_level", and "message". The valid log
 # levels are `INFO`, `TRACE`, and `WARNING`. See lines 67 to 71 for how we expect the
 # results to look.
-def get_dict(line):
+def get_dict(line: str) -> dict:
     """Takes a log line and returns a dict with
     `timestamp`, `log_level`, `message` keys
     """
-    pass
+    log_dict = {}
+    log_levels = ['INFO', 'TRACE', 'WARNING']
+    timestamp_regex = "../../.. ..:..:.."
+
+    timestamp = re.search(timestamp_regex, line).group()
+    log_dict['timestamp'] = timestamp.strip("\n ")
+
+    for log_level in log_levels:
+        if log_level in line:
+            log_dict['log_level'] = log_level
+            break
+
+    log_dict['message'] = line[line.index(' :.'):].strip("\n ")
+
+    return log_dict
 
 
 # YOU DON'T NEED TO CHANGE ANYTHING BELOW THIS LINE
