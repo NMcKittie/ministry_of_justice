@@ -1,3 +1,5 @@
+import re
+
 # [TODO]: step 1
 # Update the is_log_line function below to skip lines that are not valid log lines.
 # Valid log lines have a timestamp, error type, and message. For example, lines 1, 3,
@@ -5,10 +7,21 @@
 # There's no perfect way to do this: just decide what you think is reasonable to get
 # the test to pass. The only thing you are not allowed to do is filter out log lines
 # based on the exact row numbers you want to remove.
-def is_log_line(line):
+
+
+def is_log_line(line: str) -> bool:
     """Takes a log line and returns True if it is a valid log line and returns nothing
     if it is not.
     """
+    if len(line) < 27:
+        return None
+
+    if ":" not in line or not re.search("../../.. ..:..:..", line):
+        return None
+
+    if not any(substring in line for substring in ['INFO', 'TRACE', 'WARNING']):
+        return None
+
     return True
 
 
@@ -43,8 +56,8 @@ if __name__ == "__main__":
     # ---- OUTPUT --- #
     # You can print out each line of the log file line by line
     # by uncommenting this code below
-    # for i, line in enumerate(log_parser("sample.log")):
-    #     print(i, line)
+    # for i, line in enumerate(log_parser_step_2("sample.log")):
+    #    print(i, line)
 
     # ---- TESTS ---- #
     # DO NOT CHANGE
@@ -82,10 +95,9 @@ if __name__ == "__main__":
             print(f"Expected: {expected}")
             print(f"Generator Output: {actual}")
 
-    try:
-        test_step_1()
-    except Exception:
-        print("step 1 test unable to run")
+    test_step_1()
+   # except Exception:
+   #     print("step 1 test unable to run")
 
     try:
         test_step_2()
