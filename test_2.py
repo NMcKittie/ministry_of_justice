@@ -65,6 +65,105 @@
 # - the dx_number (if available) of the nearest court of the right type
 # - the distance to the nearest court of the right type
 
+
+import csv
+import requests
+
+
+def extract_court_info(courts: list[dict], type_required: str) -> list[dict]:
+    """Returns a list of dicts with the useful information extracted"""
+    name = 'name'
+    dx_num = 'dx_number'
+    distance = 'distance'
+    court_type = 'types'
+    new_courts = []
+    for court in courts:
+        if type_required in court.get(court_type):
+            new_court = {}
+            new_court[name] = court.get(name)
+            new_court[dx_num] = court.get(dx_num)
+            new_court[distance] = court.get(distance)
+            new_courts.append(new_court)
+
+    return new_courts
+
+
+def get_people(file_path: str) -> list[dict]:
+    """Return a list of dicts of data extracted from a csv file."""
+    people = []
+    with open(file_path, 'r', encoding="utf-8") as file:
+        lines = csv.DictReader(file)
+        people += list(lines)
+    return people
+
+
+def get_courts(url: str, postcode: str, type_required: str) -> list[dict]:
+    """Return a list of dictionaries of the closest courts with the data needed"""
+
+    url = url.format(postcode)
+    response = requests.get(url, timeout=10)
+    if response.status_code == 404:
+        raise Exception("Unable to locate postcode.",
+                        response.status_code)
+    if response.status_code != 200:
+        raise Exception("Unable to connect to server.", response.status_code)
+
+    courts = response.json()
+
+    return extract_court_info(courts, type_required)
+
+
+def find_closest_court(courts: list[dict]) -> dict:
+    """Returns the court dictionary that is closest"""
+    distance = "distance"
+    closest_distance = float('inf')
+    closest_court = {}
+
+    if not courts:
+        raise ValueError("Error: No courts given")
+
+    for court in courts:
+        court_distance = court.get(distance)
+        if court_distance < closest_distance:
+            closest_distance = court_distance
+            closest_court = court
+
+    return closest_court
+
+
+def people_with_closest_court(people: list[dict]) -> dict:
+    """Return a list of dictionaryies with people and their closest court with a few key details"""
+
+    url = 'https://www.find-court-tribunal.service.gov.uk/search/results.json?postcode={}'
+    people_with_courts = []
+    person_name = 'person_name'
+    court_type = 'looking_for_court_type'
+    postcode = 'home_postcode'
+
+    for person in people:
+        person_and_court = {}
+        person_and_court['name'] = person.get(person_name)
+        person_and_court['court_type'] = person.get(court_type)
+        person_and_court['postcode'] = person.get(postcode)
+
+        courts = get_courts(url, person.get(postcode), person.get(court_type))
+        court = find_closest_court(courts)
+
+        person_and_court['court_name'] = court.get('name')
+        person_and_court['dx_number'] = court.get('dx_number')
+        person_and_court['distance'] = court.get('distance')
+
+        people_with_courts.append(person_and_court)
+
+    return people_with_courts
+
+
+def main():
+    """A function to contain the main"""
+    people = get_people('people.csv')
+    people_with_courts = people_with_closest_court(people)
+    print(people_with_courts)
+
+
 if __name__ == "__main__":
-    # [TODO]: write your answer here
-    pass
+    main()
